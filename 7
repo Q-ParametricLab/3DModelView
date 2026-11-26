@@ -1,0 +1,734 @@
+我完整看了这份用于 Blender MCP 的提示词。从专业汽车数字模型师（Automotive Digital Modeler）和 AI 建模工作流开发者的角度来看，它非常适合作为一个 Skill 的基础，但不建议直接将整份提示词封装成一个 Skill。
+
+它已经是一份比较完整的 Production Brief（制作任务书），包含了参考图分析、汽车建模、机械结构、材质、环境、绑定、动画、OBS 录屏以及最终质量检查，共 17 个章节。
+
+但它目前更擅长指导 AI 完成一个特定的汽车视觉表现项目，还不足以指导 AI 像专业汽车数字模型师一样，持续、稳定地制作高质量、可编辑的汽车模型。
+
+尤其是你关注的复杂有机曲面、独立零部件、模型可编辑性和高光质量，我认为需要大幅加强建模方法和质量验收标准，而不仅仅是增加对最终视觉效果的描述。
+
+一、对现有提示词的评价
+
+以下评分是基于专业汽车建模工作流的主观评估，并非实际运行 Blender MCP 后的测试结果。
+
+项目目标与制作流程
+
+95/100
+
+参考图还原要求
+
+85/100
+
+OBS 录屏与过程展示
+
+95/100
+
+场景与动画制作
+
+90/100
+
+模型组织与可编辑性
+
+70/100
+
+专业汽车曲面建模规范
+
+40/100
+
+拓扑与高光质量控制
+
+35/100
+
+MCP 执行与异常恢复机制
+
+40/100
+
+作为通用 Skill 的复用性
+
+55/100
+
+现有提示词有几个值得保留的优点：
+
+* 强调参考图的一致性，而不是让 AI 自由发挥。
+* 要求先确定整车比例，再添加细节。
+* 要求真正的零件结构，而不是简单使用贴图模拟。
+* 强调非破坏性建模、模型层级和阶段性保存。
+* 对 MCP 操作过程与 OBS 录屏有明确要求。
+* 明确最终质量优先于录屏效果。
+
+最大的问题是：告诉了 AI 要做什么，却没有充分告诉 AI 应该用什么建模方法做，以及如何判断自己做得足够好。
+
+二、如何将它改造成真正的 Skill
+
+我建议将现有提示词分为三个层级：专业知识、执行能力、项目需求。
+
+Project Brief
+
+参考图片、车型、颜色、场景、动画需求
+
+Automotive Modeling Master Skill
+
+任务分解、建模决策、执行顺序、质量管理
+
+Reference Analysis
+
+Body Surfacing
+
+Topology & SubD
+
+Mechanical Modeling
+
+Materials & Lighting
+
+Quality Inspection
+
+Vehicle Animation
+
+OBS Recording
+
+Execution Layer
+
+Blender MCPPython / bpyBMeshGeometry Nodes
+
+Inspection → Correction → Delivery
+
+检查实际模型结果，不合格则返回对应建模阶段
+
+这样一来，下次你给 AI 一张跑车、SUV、概念汽车甚至机械蜘蛛的图片，就不需要重新编写几百行提示词。
+
+Skill 提供长期可复用的专业能力，Project Brief 只负责说明这一次需要制作什么。
+
+建议的 Skill 文件结构
+
+automotive-modeling/
+│
+├── SKILL.md
+│
+├── references/
+│   ├── reference-analysis.md
+│   ├── automotive-proportions.md
+│   ├── body-surfacing.md
+│   ├── topology-rules.md
+│   ├── component-construction.md
+│   ├── mechanical-modeling.md
+│   ├── materials-lighting.md
+│   ├── quality-control.md
+│   ├── environment.md
+│   ├── vehicle-animation.md
+│   └── obs-recording.md
+│
+├── scripts/
+│   ├── inspect_scene.py
+│   ├── create_vehicle_package.py
+│   ├── create_section_surface.py
+│   ├── create_panel_gap.py
+│   ├── create_wheel.py
+│   ├── inspect_topology.py
+│   ├── inspect_clearance.py
+│   ├── setup_inspection_views.py
+│   └── save_checkpoint.py
+│
+└── assets/
+    ├── inspection_materials.blend
+    ├── studio_lighting.blend
+    └── vehicle_template.blend
+
+这是建议的架构，并不是已经开发完成的文件。
+
+标准 Agent Skills 本身就支持这种 SKILL.md、参考文档、脚本和资源文件相结合的模式，并允许 AI 根据当前任务按需加载相关知识，而不是每次读取全部内容。GitHub +1
+
+三、站在专业汽车模型师角度，最需要修改的12个地方
+
+01. 增加参考图结构化分析阶段
+
+原文要求分析参考图，但没有定义分析后需要输出什么。
+
+AI 很容易看完图片，就直接开始创建 Cube、Cylinder 等基础物体，最后通过拉伸和组合拼出一个大致相似的汽车。
+
+专业模型师不应该这样开始。
+
+比例与硬点分析
+
+轴距、轮距、车高、前后悬、座舱位置
+
+特征线分析
+
+肩线、腰线、轮眉、曲面转折
+
+零部件拆解
+
+识别独立部件及其相互关系
+
+断面分析
+
+判断曲面饱满度、凹凸及曲率变化
+
+建议增加一个强制性的 Reference Analysis 阶段，要求 AI 在开始建模前确定：
+
+分析项目	必须确定的内容
+Vehicle Type	车型及设计语言
+Proportions	整车长宽高及比例
+Hard Points	车轮中心、轴距、轮距等
+Silhouette	各视角的外轮廓
+Character Lines	肩线、腰线、主要特征线
+Section Profiles	关键位置的横纵断面
+Component List	所有需要独立制作的部件
+Surface Relationships	曲面之间的连接和转折
+Uncertainty	参考图未展示、需要合理推断的区域
+
+特别需要强调：参考图中看不到的区域，AI 可以合理补全，但是必须区分哪些是参考图中明确存在的设计，哪些是推断出来的设计。
+
+不能把 AI 的猜测当作原始设计。
+
+02. 建立 Vehicle Package 系统
+
+原文只提到约5米的车长和正确的轮距轴距，这是不够的。
+
+建议先建立一套统一的整车硬点系统，之后所有部件都基于它生成。
+
+整车 Package 示意图，尺寸及比例应根据具体参考图确定。
+
+建议将以下参数保存在 Blender 自定义属性或者统一的 JSON 数据中。
+
+{
+  "vehicle_length": 5.0,
+  "vehicle_width": 2.0,
+  "vehicle_height": 1.35,
+  "wheelbase": 2.85,
+  "front_track": 1.70,
+  "rear_track": 1.75,
+  "front_wheel_radius": 0.35,
+  "rear_wheel_radius": 0.37,
+  "ground_clearance": 0.12
+}
+
+以上数值仅为示例，不是原参考车型的测量数据。
+
+整个模型使用统一的坐标系和硬点。后续调整轴距、车高、车宽时，就有机会通过依赖关系联动调整相关部件，而不是逐个手动修改。
+
+这也比较符合你在 Grasshopper 和 Alias 中使用的参数化建模思路。
+
+03. 从 Primitive Modeling 改为 Surface-Driven Modeling
+
+这是我认为最重要的一项修改。
+
+原文第5章仅要求使用对称和受控的细分曲面制作平滑车身，但没有明确具体的曲面构建方法。
+
+汽车模型的主体不应该主要依靠大量基础几何体、Boolean、Voxel Remesh 来拼接。
+
+Primitive-driven
+
+适合初期体量和空间关系确定，不适合作为最终车身曲面构建的主要方法。
+
+Surface-driven
+
+使用特征线、断面、控制网格和细分曲面控制最终形体。
+
+建议要求 AI 对不同类型的部件采用不同的建模策略。
+
+零件类型	优先采用的方法
+引擎盖	特征曲线、断面网格、SubD
+车门	连续母面、局部曲率控制
+翼子板	轮眉边界、断面、四边面拓扑
+车顶	纵向中心线、横向断面
+前后保险杠	SubD、特征线控制
+格栅	曲线边界、参数化 Pattern
+轮胎	旋转体、Array、Geometry Nodes
+轮毂	旋转对称、径向阵列
+机械管道	Bezier Curve、Sweep
+螺栓和支架	Hard Surface、Bevel、Boolean
+
+建议在 Skill 中定义如下建模顺序。
+
+曲面构建方法示意：特征线 → 断面 → 控制网格 → 平滑曲面。
+
+这比单纯告诉 AI “Make smooth automotive surfaces” 更具有实际执行价值。
+
+04. 增加 Master Surface（母面）建模概念
+
+原文要求制作车门、引擎盖、翼子板等独立部件，但缺少一个关键前提：独立零件之间必须具备统一的曲面关系。
+
+如果 AI 分别创建车门、前翼子板、后翼子板，即使每一个部件都很光滑，组合之后也可能出现明显的高光错位。
+
+先建立整车母面
+
+控制整体体量、曲面流向及连续性。
+
+再进行零部件分割
+
+继承母面的曲率，建立分缝及翻边。
+
+推荐流程为：
+
+Main Surface → Panel Boundary → Panel Extraction → Shutline → Edge Radius → Thickness
+
+在 Blender 中可以通过保留基础母面、派生独立网格、局部 Shrinkwrap 或其他受控曲面构建方式实现。
+
+特别是车门与翼子板、A柱与车顶、引擎盖与前翼子板这些区域，不应当以零件独立为理由牺牲整车的高光连续性。
+
+05. 增加严格的 SubD 拓扑标准
+
+推荐的控制网格
+
+低密度、清晰的边流、可预测的曲率。
+
+应避免的主体网格
+
+过度密集、难以控制曲率和局部造型。
+
+原文虽然提到了 non-manifold、法线等检查，但这些属于基础网格健康检查，不能代表专业的汽车曲面质量。
+
+我建议加入以下约束：
+
+项目	建模要求
+Quad Topology	主车身优先使用四边面
+Edge Flow	边线遵循造型特征和曲面流向
+Mesh Density	用尽可能少的控制点表达形体
+Poles	避免在高曲率、高光敏感区域设置复杂极点
+Support Loops	合理控制硬边及转折半径
+Crease	只在明确需要硬边的区域使用
+Subdivision	保留未应用的 SubD 修改器
+Boolean	不作为大面积主曲面塑形的主要手段
+Remesh	不用于替代最终车身控制拓扑
+Symmetry	对称区域保留 Mirror 修改器
+
+Blender 官方文档也特别强调，细分曲面的结果依赖基础拓扑质量，而不是仅仅提高细分级别。Blender 5.4 Manual +1
+
+不要强制整车所有零件都必须是四边面。机械件、隐藏结构、平面区域可以根据用途合理使用其他拓扑。
+
+06. 增加汽车高光质量检测系统
+
+这一点在原文中几乎没有专门涉及，但对汽车数字模型来说非常重要。
+
+一个模型渲染得好看，并不代表模型曲面做得好。
+
+Zebra Analysis
+
+检查反射条纹及曲面连接质量。
+
+Highlight Analysis
+
+观察高光流向、局部波纹和不自然的凹凸。
+
+Curvature Analysis
+
+判断断面曲率变化是否合理。
+
+Clay Review
+
+排除颜色、贴图、污渍等因素，单独检查形体。
+
+建议开发专用检查模式：Surface Inspection Mode。
+
+曲面连续性示意
+
+对于 Blender SubD 模型，可以追求类似 Class-A 的视觉高光质量，但不应该声称已经达到了 Alias NURBS 曲面中严格数学意义上的 Class-A 或指定 G2/G3 验收标准。
+
+如果最终需要进入汽车工程开发流程，仍应在 Alias 或 Rhino 等软件中进行相应的曲面检测和必要的重建。
+
+07. 明确定义汽车零件的独立性和完整性
+
+原文已经提出零件独立和层级管理，但是还需要把这一要求变成强制规范。
+
+建议定义一个标准的汽车零件树：
+
+Vehicle Root
+
+Exterior
+
+Hood / Doors / Fenders / Roof / Bumpers
+
+Glazing
+
+Windshield / Side Windows / Rear Glass
+
+Lighting
+
+Headlamps / Lenses / Housings / Tail Lamps
+
+Wheel Assemblies
+
+Tires / Rims / Hubs / Brakes
+
+Mechanical
+
+Chassis / Suspension / Pipes / Brackets
+
+Interior
+
+Seats / Dashboard / Steering Wheel
+
+Construction
+
+Master Surfaces / Curves / Sections / Hard Points
+
+每个主要零部件应具备独立的 Object、名称、合理的 Origin、局部坐标系、材质和编辑能力。需要进行动画的零件，还必须设置正确的旋转轴。
+
+但是也不建议盲目要求所有物体都是封闭实体，例如尚处于制作阶段的母面和曲面边界可以合理保持开放状态。
+
+08. 增加真实的汽车细节尺度
+
+汽车真实感很大程度来自合理的细节尺度，而不是堆叠复杂几何体。
+
+Panel Gap
+
+Edge Radius
+
+Window Seal
+
+可在 Skill 中提供可配置的概念建模默认值：
+
+参数	示例范围
+车身分缝	3–5 mm
+可见钣金边缘圆角	0.5–2 mm
+钢制外覆盖件厚度	0.7–1.2 mm
+塑料外饰件厚度	2–4 mm
+玻璃厚度	3–6 mm
+
+这些是用于视觉建模的初始参考范围，不是统一的汽车制造标准，实际应根据车型、材料和具体零件调整。
+
+这样 AI 就不容易生成宽达几厘米的车门缝隙、过度夸张的倒角或明显不合理的零件厚度。
+
+09. 强制使用闭环建模，而不是一次性生成
+
+原提示词要求逐步建模并不断检查，但是没有详细说明 AI 应该如何检查自己创建的模型。
+
+对于 Blender MCP，最大的风险之一就是 AI 执行 Python 脚本后，看到脚本成功返回，就认为模型已经成功完成。
+
+Python 执行成功 ≠ 模型制作成功。
+
+建议增加以下强制执行循环：
+
+每完成一个重要部件，AI 应通过可用的 MCP 接口或 Blender Python 获得实际结果，包括视口截图、物体尺寸、拓扑信息、修改器状态和与相邻零件的空间关系。
+
+如果检查不通过，就修正当前部件，而不是继续向下执行。
+
+10. 增加不同阶段的质量关卡
+
+我不建议 AI 一口气从参考图分析直接做到最后的动画。
+
+建议设置6个 Quality Gates。
+
+01
+
+Package Approval
+
+整车尺寸、轴距、轮距、座舱位置正确
+
+02
+
+Volume Approval
+
+整车体量、轮廓、姿态符合参考图
+
+03
+
+Surface Approval
+
+车身曲面、特征线、高光、拓扑通过检查
+
+04
+
+Component Approval
+
+零件独立完整、分缝合理、装配正确
+
+05
+
+Material Approval
+
+材质、颜色、玻璃、灯具及视觉效果正确
+
+06
+
+Final Approval
+
+可编辑性、场景组织、交付文件完整
+
+对于全自动模式，AI 可以自主判断是否进入下一阶段；对于专业设计开发模式，可以在重要的比例和曲面阶段由用户进行审核。
+
+尤其是 Volume Approval。如果整车比例已经错误，后面制作再多细节都是浪费时间。
+
+11. 建立专业的建模工具库，而不是让 AI 每次重写代码
+
+结合你的开发背景，我认为这是最值得投入的方向。
+
+你可以为 Blender MCP 开发一套专业汽车建模 API，让 AI 不需要每次从最基础的 bpy 开始编写几百行代码。
+
+例如：
+
+建议开发的函数	功能
+create_vehicle_package()	创建整车硬点和参数系统
+create_feature_curve()	创建造型特征线
+create_section_surface()	根据多个断面生成曲面控制网格
+create_quad_patch()	根据边界创建四边面 Patch
+create_wheel_arch()	创建轮眉及相关边界
+extract_body_panel()	从母面派生独立部件
+create_shutline()	创建可控的车身分缝
+create_wheel_assembly()	参数化轮胎和轮毂
+create_pattern_on_surface()	创建贴合曲面的格栅 Pattern
+inspect_surface()	输出曲面和高光检查所需数据
+inspect_clearance()	检查零件间隙及穿插
+capture_review_views()	自动生成多个标准检查视角
+
+这些函数是建议开发的接口，并不是 Blender MCP 现有的内置函数。
+
+例如，未来 AI 可以使用类似这样的高层接口：
+
+hood = create_section_surface(
+    name="Hood_Master",
+    longitudinal_curves=hood_feature_curves,
+    cross_sections=hood_sections,
+    symmetry=True,
+    subdivision_level=2
+)
+create_shutline(
+    surface=hood,
+    boundary=hood_boundary,
+    gap=0.004,
+    edge_radius=0.0015
+)
+inspect_surface(
+    object=hood,
+    check_topology=True,
+    check_reflection=True
+)
+
+相比让 AI 每次自行决定如何创建 Mesh 的顶点、面、边以及修改器，这种方式有机会显著提高结果的一致性和可控性。
+
+这实际上可以借鉴你以前在 Grasshopper 中封装参数化组件的方式：把复杂的几何处理变成具有明确输入、输出和约束的专业工具，再由 AI 来组织和调用。
+
+12. 将环境、动画、OBS 与汽车建模分离
+
+原文第8章至第15章有大量关于沙漠、轮胎烟雾、动画和 OBS 的描述。这些内容很完善，但是不应成为汽车建模核心 Skill 的强制要求。
+
+建议把它们设计成可以选择启用的模块：
+
+模块	启用条件
+Automotive Modeling	默认启用
+Surface Inspection	默认启用
+Automotive Materials	需要外观表现时
+Environment Creation	需要场景时
+Vehicle Rigging	需要可动模型时
+Cinematic Animation	需要动画时
+OBS Recording	用户需要录制过程时
+External Asset Integration	允许使用外部资产时
+
+这样当你只需要生成一个高质量的汽车前保险杠时，AI 不会顺带开始制作沙漠、烟雾和动画。
+
+四、建议修改后的核心 SKILL.md
+
+下面是我建议采用的核心英文版本。它不是完整的工具包，而是整个 Skill 的主入口和执行规范草案。
+
+⸻
+
+name: automotive-modeling
+description: Create, reconstruct, refine, and inspect professional editable automotive 3D models from visual references using Blender MCP and Python, with emphasis on accurate proportions, surface-driven construction, clean subdivision topology, independent components, and high-quality reflections.
+
+Automotive Modeling Expert
+
+1. Professional Role
+
+Act as a senior automotive digital modeler and technical artist specializing in automotive exterior surfacing, subdivision modeling, mechanical component construction, reference reconstruction, and parametric modeling.
+
+Preserve the original design intent. Do not introduce unsupported design changes unless explicitly requested.
+
+2. Core Priorities
+
+Follow this priority order:
+
+1. Reference and design fidelity.
+2. Vehicle proportions and package accuracy.
+3. Surface and highlight quality.
+4. Clean, controllable topology.
+5. Component independence and assembly integrity.
+6. Non-destructive editability.
+7. Materials and visual presentation.
+8. Animation, recording, and rendering performance.
+
+Never sacrifice the first six priorities merely to improve presentation.
+
+3. Reference Analysis
+
+Before creating geometry:
+
+* Inspect all supplied references and existing scene geometry.
+* Identify the vehicle type, design language, silhouette, proportions, and major hard points.
+* Extract primary feature lines and representative cross sections.
+* Establish a complete component hierarchy.
+* Distinguish observed design features from inferred or reconstructed features.
+* Document important assumptions about hidden or ambiguous geometry.
+
+Do not begin detailed modeling until the vehicle package and primary volumes are established.
+
+4. Vehicle Package
+
+Create a consistent coordinate system and centralized dimensional parameters.
+
+Define overall length, width, height, wheelbase, track widths, wheel centers, tire dimensions, ground clearance, roof position, pillar positions, and major body hard points.
+
+Use these parameters consistently throughout the vehicle assembly.
+
+5. Surface-Driven Construction
+
+Use feature curves, section profiles, boundary curves, controlled quad patches, and subdivision surfaces as the primary construction methods for organic automotive bodywork.
+
+Create coherent master surfaces before deriving individual exterior panels where appropriate.
+
+Do not construct final automotive body surfaces primarily by overlapping primitive objects, uncontrolled Boolean operations, or voxel remeshing.
+
+Select the construction method according to the component’s geometry and functional requirements.
+
+Preserve the original editable construction geometry whenever practical.
+
+6. Automotive Topology
+
+Use clean quad-dominant control meshes for primary subdivision body surfaces.
+
+Maintain logical edge flow following major styling lines, curvature changes, and panel boundaries.
+
+Avoid unnecessary mesh density, irregular spacing, uncontrolled poles, pinching, and unwanted surface waviness.
+
+Place topology transitions away from highlight-sensitive areas whenever possible.
+
+Preserve useful Mirror, Subdivision Surface, Solidify, and other non-destructive modifiers.
+
+7. Component Construction
+
+Construct major functional components as independently editable objects.
+
+Derive neighboring panels from coherent master surfaces where appropriate to preserve their visual relationships.
+
+Create intentional panel gaps, edge radii, visible thickness, seals, openings, and assembly interfaces.
+
+Maintain appropriate names, origins, transforms, material assignments, and parent relationships.
+
+Use instancing or linked geometry for repeated components where appropriate.
+
+8. Surface Quality Inspection
+
+Inspect automotive surfaces using neutral clay materials, reflective studio lighting, stripe reflections, wireframe overlays, and representative section profiles.
+
+Check silhouette accuracy, curvature behavior, highlight flow, surface transitions, topology, and unwanted intersections.
+
+Do not use paint, textures, weathering, or cinematic lighting to conceal geometric defects.
+
+Do not claim mathematical Class-A or G2/G3 compliance unless supported by appropriate geometric measurements.
+
+9. Execution Loop
+
+For each major construction stage:
+
+1. Inspect the current scene.
+2. Identify the modeling objective.
+3. Select an appropriate construction method.
+4. Execute a bounded modeling operation.
+5. Retrieve and inspect actual geometry and viewport results.
+6. Compare the result against the reference and quality requirements.
+7. Correct identified defects.
+8. Save a recoverable checkpoint when the stage passes inspection.
+
+Successful script execution alone does not constitute successful modeling.
+
+Verify available MCP capabilities before relying on specific operations.
+
+10. Production Gates
+
+Complete production in the following order:
+
+* Vehicle package and reference analysis.
+* Primary volumes and silhouette.
+* Master surfaces and styling lines.
+* Surface refinement and topology inspection.
+* Independent panel and component construction.
+* Mechanical details and assembly verification.
+* Materials and presentation.
+* Final validation.
+
+Do not advance past unresolved major proportion or surface defects.
+
+11. Optional Workflows
+
+Activate environment creation, vehicle rigging, cinematic animation, external asset integration, or OBS recording only when required by the project brief.
+
+Load their corresponding reference documents as needed.
+
+12. Final Delivery
+
+Deliver an organized, editable model with coherent component hierarchy, preserved construction data, appropriate modifiers, consistent transforms, and documented limitations.
+
+Clearly distinguish completed, validated, inferred, and unresolved work.
+
+Never claim that an operation, inspection, or deliverable has been completed without verifying its actual result.
+
+这个版本着重于建模决策和执行标准，而不再绑定某一辆肌肉车、某一种材质或某一个沙漠场景。
+
+原提示词中关于车型、橙色图案、机械设备、固定摄像机、烧胎和离场动画的描述，可以基本保留，作为该车型独立的 Project Brief。
+
+五、进一步结合 Tripo 等3D生成模型
+
+考虑到你之前研究的 AI 协同3D汽车建模方案，我甚至建议这个 Skill 不一定要让 Blender MCP 独立完成所有零部件。
+
+可以让 AI 成为一个能够自主选择建模技术的汽车模型制作管理者。
+
+Concept Image
+
+汽车概念设计图
+
+Automotive Modeling Agent
+
+分析、拆解、选择建模方法
+
+Blender SubD
+
+车身主体、曲面、高光敏感部件
+
+Parametric
+
+轮毂、格栅、灯具、规则机械件
+
+3D Gen AI
+
+复杂次要部件、粗模、造型参考
+
+Assembly & Refinement
+
+尺寸匹配、位置调整、重拓扑、曲面重建
+
+Quality Control
+
+造型、高光、拓扑、装配和可编辑性检查
+
+对于车身外覆盖件，我会优先使用可控的 SubD 曲面建模。
+
+对于复杂机械结构，可以使用 Tripo 等模型辅助生成初始几何，再根据需要重拓扑、调整尺寸或重建关键结构。
+
+对于格栅、扬声器 Pattern、轮毂等规律性明显的部件，则优先采用参数化生成。
+
+不应当用同一种技术解决所有类型的几何问题。
+
+六、最终建议
+
+如果由我来负责这个项目，我会按照以下顺序开发。
+
+开发阶段	主要任务	优先级
+V1.0	专业汽车建模 Skill、参考图分析规范	P0
+V1.1	标准视图、几何检查、高光检查工具	P0
+V1.2	Package、特征线、断面曲面生成工具	P0
+V1.3	母面派生、零件分割、分缝工具	P0
+V2.0	机械件、格栅、轮毂参数化工具	P1
+V2.1	外部3D生成模型协同与装配	P1
+V3.0	材质、环境、动画和 OBS 自动化	P2
+
+需要说明的是，我目前评估的是你上传的提示词和工作流设计，没有连接实际的 Blender MCP，也没有运行建模测试，因此还无法验证具体 MCP 接口的可用性和最终生成模型的质量。
+
+我认为这个项目真正有价值的方向，并不是继续完善一份越来越长的 Prompt，而是建立一套 AI Automotive Modeling Toolkit。
+
+其中：
+
+* Skill 是专业模型师的知识与决策能力。
+* Python 工具库是专业模型师的建模工具。
+* MCP 是 AI 操作软件的接口。
+* 参考图片是造型设计输入。
+* Quality Control 是最终模型的质量保障。
+
+最终希望实现的是：AI 不仅能够操作 Blender 创建3D物体，还能够理解为什么应该采用某种建模方法、如何控制汽车曲面，以及如何判断自己制作的模型是否真正合格。
